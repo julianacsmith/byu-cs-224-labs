@@ -61,7 +61,7 @@ void getBmpFileAsBytes(unsigned char* ptr, unsigned fileSizeInBytes, FILE* strea
 }
 
 unsigned char getAverageIntensity(unsigned char blue, unsigned char green, unsigned char red) {
-  return (unsigned char)(blue+green+red)/3;
+  return (blue+green+red)/3;
 }
 
 void applyGrayscaleToPixel(unsigned char* pixel) {
@@ -69,8 +69,9 @@ void applyGrayscaleToPixel(unsigned char* pixel) {
   unsigned char green = pixel[1];
   unsigned char red = pixel[2];
   unsigned char avg = getAverageIntensity(blue, green, red);
-  unsigned char * average = &avg;
-  pixel = average;
+  pixel[0] = avg;
+  pixel[1] = avg;
+  pixel[2] = avg;
 }
 
 void applyThresholdToPixel(unsigned char* pixel) {
@@ -79,9 +80,13 @@ void applyThresholdToPixel(unsigned char* pixel) {
   unsigned char red = pixel[2];
   unsigned char avg = getAverageIntensity(blue, green, red);
   if(avg >= 128){
-    pixel = (unsigned char *)0xff;
+    pixel[0] = 0xff;
+    pixel[1] = 0xff;
+    pixel[2] = 0xff;
   } else {
-    pixel = (unsigned char *)0x00;
+    pixel[0] = 0x00;
+    pixel[1] = 0x00;
+    pixel[2] = 0x00;
   }
 }
 
@@ -95,21 +100,26 @@ void applyFilterToPixel(unsigned char* pixel, int isGrayscale) {
 
 void applyFilterToRow(unsigned char* row, int width, int isGrayscale) {
   for(int i = 0; i < width; i++){
-    applyFilterToPixel(&row[i], isGrayscale);
- }
+    applyFilterToPixel((row+(i*3)), isGrayscale);
+  }
 }
 
 void applyFilterToPixelArray(unsigned char* pixelArray, int width, int height, int isGrayscale) {
   int padding = 0;
-  int offset = 0;
-  padding = (4-(width%4));
-#ifdef DEBUG
-  printf("padding = %d\n", padding);
-#endif  
+  //int offset = 0;
   for(int i = 0; i < height; i++){
-    offset = (width + padding) *1;
-    applyFilterToRow(pixelArray+offset, width, isGrayscale);
+    padding = (width*3) %4;
+    if(padding != 0){
+      padding = 4-padding;
+    }
+    #ifdef DEBUG
+      printf("padding = %d\n", padding);
+    #endif  
+    applyFilterToRow(pixelArray, width, isGrayscale);
+    pixelArray+= (width*3) + padding;
+    //offset = (width + padding) *i;
   }
+  return;
 }
 
 void parseHeaderAndApplyFilter(unsigned char* bmpFileAsBytes, int isGrayscale) {
@@ -118,11 +128,12 @@ void parseHeaderAndApplyFilter(unsigned char* bmpFileAsBytes, int isGrayscale) {
   int height = 0;
   unsigned char* pixelArray = NULL;
 
-  offsetFirstBytePixelArray = *((int *) bmpFileAsBytes + 10);
+  int * offset = (int *) (bmpFileAsBytes+10);
+  offsetFirstBytePixelArray = *offset;
+
   width = *(int *)(bmpFileAsBytes + 18);
   height = *(int *)(bmpFileAsBytes + 22);
-  //pixelArray = bmpFileAsBytes + offsetFirstBytePixelArray; // If I remove, then no more Seg Fault
-  pixelArray = bmpFileAsBytes;
+  pixelArray = bmpFileAsBytes + offsetFirstBytePixelArray;
 #ifdef DEBUG
   printf("offsetFirstBytePixelArray = %u\n", offsetFirstBytePixelArray);
   printf("width = %u\n", width);
