@@ -1,0 +1,1 @@
+/usr/bin/clang -g -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/byu_cs_224_labs.dir/y86-64/utils.c.o CMakeFiles/byu_cs_224_labs.dir/y86-64/y86-64.c.o -o byu_cs_224_labs 
